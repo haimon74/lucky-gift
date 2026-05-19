@@ -1,0 +1,58 @@
+TASK 06 — Wizard Step 2: Message & Preview
+Branch: feat/task-06-wizard-step2
+
+OBJECTIVE
+Implement Step 2 of the wizard: the message editor with the occasion visual and a live full gift card preview that updates as the user types.
+
+DELIVERABLES
+
+apps/web/
+
+1. components/wizard/WizardStep2.tsx:
+   - **Occasion Visual** (top of form):
+     - Large card (full width, ~200px tall) with gradient background from occasion.gradientColors
+     - Centered: large occasion emoji (64px), occasion display name below it
+     - Smooth fade-in animation when rendered
+   - **Message Editor**:
+     - Textarea (dark themed, from @lucky-gift/ui)
+     - Pre-populated with defaultMessage from selected occasion (from @lucky-gift/shared OCCASIONS)
+     - Max 500 characters, live character counter (gold text, turns red near limit)
+     - Label: "Your personal message"
+   - **Live Gift Card Preview** (right side on desktop, below on mobile):
+     - Simulates a gift card/envelope at mobile width (~320px)
+     - Gradient background matching occasion
+     - Occasion emoji (large)
+     - Occasion display name
+     - Message text (live, truncated after 120 chars in preview with "...")
+     - "from: [senderName or 'You']" at bottom
+     - Gold "Open Gift" button mock (not clickable, just visual)
+     - Label above: "Preview — how recipient sees it"
+   - Layout: 2-column on desktop (editor left, preview right), stacked on mobile
+
+2. components/GiftCardPreview.tsx (reusable):
+   - Standalone component used in Step 2 and Step 1 mini-preview
+   - Props: occasionKey, message, senderName, size ('mini' | 'full')
+   - 'mini' size: compact preview ~160px tall for Step 1
+   - 'full' size: full preview ~400px for Step 2
+
+TESTS
+
+- WizardStep2.test.tsx:
+  - Renders occasion visual with correct emoji
+  - Textarea pre-filled with occasion's defaultMessage
+  - Character counter shows correct count
+  - Character counter shows warning color near 500
+  - Typing in textarea updates GiftCardPreview message
+  - Continue button always enabled (message can be empty)
+
+- GiftCardPreview.test.tsx:
+  - Renders with 'mini' size
+  - Renders with 'full' size
+  - Shows correct occasion emoji for each occasionKey
+  - Truncates message over 120 chars in mini mode
+  - Shows senderName when provided
+
+NOTES
+- Message field is optional — user can clear the default and leave it empty
+- GiftCardPreview must look good at all sizes without layout breakage
+- Gradient background uses inline style with occasion.gradientColors array: `background: linear-gradient(135deg, ${colors[0]}, ${colors[1]})`

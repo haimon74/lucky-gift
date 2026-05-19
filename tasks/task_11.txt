@@ -1,0 +1,95 @@
+TASK 11 — React Native Mobile App (Expo)
+Branch: feat/task-11-mobile-app
+
+OBJECTIVE
+Implement the full mobile app using Expo/React Native. Covers both the wizard flow (create + send gifts) and the gift reveal screen. Shares all business logic via @lucky-gift/shared.
+
+DELIVERABLES
+
+apps/mobile/
+
+1. app.json / app.config.ts:
+   - App name: "Lucky Gift"
+   - Slug: lucky-gift
+   - Icon: uses emoji placeholder (🍀)
+   - Theme color: #0a0a0f
+
+2. navigation (React Navigation):
+   - Stack navigator with screens:
+     - Wizard (tabs or single screen with step state)
+     - Reveal (opened via deep link: luckygift://reveal/[giftId]?t=...)
+
+3. constants/theme.ts:
+   - Match web theme colors: backgroundPrimary, backgroundSurface, goldPrimary, goldLight, textPrimary, textSecondary, redEnvelope
+   - Typography: font sizes, line heights
+   - Spacing: standard scale
+
+4. components/ (React Native specific — NOT shared with web):
+   - Button.tsx: TouchableOpacity with gold gradient (expo-linear-gradient), loading state
+   - Card.tsx: View with dark surface styling, optional gold border
+   - Input.tsx: TextInput with dark theme, label, error text
+   - Spinner.tsx: ActivityIndicator in gold
+   - Badge.tsx: Game/occasion selection chip
+
+5. screens/wizard/
+   - WizardScreen.tsx: Step controller (manages currentStep state)
+   - Step1Screen.tsx: Game + Occasion selection (same UX as web step 1)
+   - Step2Screen.tsx: Message editor + preview (same UX as web step 2)
+   - Step3Screen.tsx: Recipients + sender + submit (same UX as web step 3)
+   - SuccessScreen.tsx: Gift sent confirmation
+
+6. screens/reveal/
+   - RevealScreen.tsx: Full reveal experience
+     - Fetches from `${BASE_URL}/api/reveal/[giftId]?t={token}`
+     - Displays occasion visual (colored View with emoji)
+     - Shows greeting and message
+     - "Reveal Numbers" button → generates numbers via @lucky-gift/shared generateLotteryNumbers
+     - Animated reveal using React Native Animated API (scale + fade each ball)
+     - Sound using expo-av (short chime audio file or programmatic tone)
+     - NumberBall components matching web style
+     - "Send lucky back to {sender}" TouchableOpacity → opens wizard with prefill
+
+7. hooks/ (shared logic adapted for RN):
+   - useWizardState.ts: Same logic as web, uses AsyncStorage instead of localStorage
+   - useGiftSubmit.ts: Same submit logic (fetch is universal)
+   - useRevealData.ts: Fetches reveal API
+
+8. utils/api.ts:
+   - BASE_URL: from Constants.expoConfig.extra.apiUrl || 'https://luck-gift.haimazar.us'
+   - submitGift(payload): fetch POST /api/gifts
+   - fetchReveal(giftId, token): fetch GET /api/reveal/[giftId]
+
+9. Deep link handling:
+   - URL scheme: luckygift://
+   - When app opened via luckygift://reveal/[giftId]?t=... → navigate to RevealScreen
+   - Configure in app.config.ts linking
+
+TESTS
+
+- Step1Screen.test.tsx:
+  - Renders 3 game options
+  - Renders 5 occasion options
+  - Selecting game + occasion enables Continue button
+
+- Step3Screen.test.tsx:
+  - Renders recipient input fields
+  - Add recipient button adds a row
+  - Submit calls submitGift with correct payload
+
+- RevealScreen.test.tsx:
+  - Loading state shown on mount
+  - Reveals numbers on button press
+  - generateLotteryNumbers called with correct seedHash and game
+
+- useWizardState.test.ts (RN):
+  - Uses AsyncStorage mock
+  - State persists across hook reinitializations
+
+NOTES
+- Use Expo SDK 53 (latest stable)
+- Use expo-router OR react-navigation v7 — prefer expo-router for consistency
+- AsyncStorage from @react-native-async-storage/async-storage
+- expo-linear-gradient for gradient backgrounds
+- All @lucky-gift/shared code is pure TypeScript — no issues using in RN
+- Do NOT use web-only APIs (window, document, localStorage) in shared code — already handled in task_02
+- API calls use same NEXT_PUBLIC_BASE_URL (configured via app.config.ts extra)

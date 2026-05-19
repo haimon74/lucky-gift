@@ -1,0 +1,91 @@
+TASK 10 — Admin Settings Page
+Branch: feat/task-10-admin-settings
+
+OBJECTIVE
+Implement the admin settings page at /settings with login, session management, and settings CRUD UI.
+
+DELIVERABLES
+
+apps/web/
+
+1. app/api/admin/login/route.ts — POST /api/admin/login:
+   - Read ADMIN_USERNAME and ADMIN_PASSWORD_HASH from env
+   - Compare submitted username with ADMIN_USERNAME (exact match)
+   - Compare submitted password with ADMIN_PASSWORD_HASH using bcryptjs.compare()
+   - If match: create session in admin_sessions table (UUID, 24h TTL), return 200 { sessionToken, expiresAt }
+   - If no match: return 401 { error: "Invalid credentials" }
+   - If env vars not set: compare against hardcoded fallback username="admin", password="Lucky1!" using bcryptjs
+
+2. app/api/settings/route.ts:
+   - GET /api/settings:
+     - Verify Authorization: Bearer header via getSession()
+     - Return 401 if session invalid/expired
+     - Return 200 { settings: SettingEntry[] }
+   - PUT /api/settings:
+     - Verify session
+     - Validate body with settingsUpdateSchema
+     - Call updateSettings() from @lucky-gift/db
+     - Return 200 { updated: n }
+
+3. middleware.ts (Next.js middleware):
+   - Protect /settings/* routes (except /settings/login)
+   - Check for lucky_gift_admin_session cookie OR Authorization header
+   - If missing/invalid: redirect to /settings/login
+   - Use Edge-compatible DB check OR pass token validation to layout
+
+4. app/settings/login/page.tsx — Login page:
+   - Dark card centered on page
+   - "🔐 Admin Login" heading
+   - Username + Password inputs (use @lucky-gift/ui Input)
+   - "Login" gold button
+   - Error message on failure
+   - On success: save sessionToken to sessionStorage + set cookie, redirect to /settings
+
+5. app/settings/page.tsx — Settings dashboard:
+   - Header: "⚙️ Lucky Gift Settings" + "Logout" button (ghost, top right)
+   - Settings table:
+     - Columns: Setting | Description | Value | Actions
+     - Each row has an "Edit" button that toggles inline editing
+     - Boolean settings (payments_enabled): render as toggle switch
+     - Numeric settings (max_recipients, gift_price_cents): number input
+     - Text settings: text input
+     - Email settings: email input
+   - "Save Changes" gold button at bottom (batch saves all pending edits)
+   - Success toast: "Settings saved!"
+   - Logout: clears sessionStorage + cookie, redirects to /settings/login
+
+6. components/settings/SettingsRow.tsx:
+   - One row in the settings table
+   - Handles edit/display toggle per field
+   - Props: setting, onUpdate
+
+7. components/settings/Toggle.tsx:
+   - Styled checkbox/toggle component (gold when enabled, gray when disabled)
+
+TESTS
+
+- api/admin/login.test.ts:
+  - Correct credentials → 200 with sessionToken
+  - Wrong password → 401
+  - Wrong username → 401
+  - Created session stored in DB
+
+- api/settings.test.ts:
+  - GET without valid token → 401
+  - GET with valid token → 200 with settings array
+  - PUT with valid token updates settings → 200 { updated }
+  - PUT with invalid token → 401
+
+- SettingsPage.test.tsx (client):
+  - Shows all settings rows
+  - Clicking Edit makes field editable
+  - Toggle flips boolean value
+  - Save Changes button triggers PUT /api/settings
+  - Logout button clears session and redirects
+
+NOTES
+- Install bcryptjs (CommonJS-compatible) not bcrypt (native bindings)
+- In development without env vars, fallback to admin/Lucky1! directly
+- Session stored in both sessionStorage (client) and cookie (for middleware SSR check)
+- Cookie: lucky_gift_admin_session=<token>; HttpOnly; SameSite=Lax; Max-Age=86400
+- middleware.ts must use Edge Runtime compatible DB operations OR just validate cookie presence + delegate real auth to the API routes

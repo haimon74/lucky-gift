@@ -1,0 +1,86 @@
+TASK 03 — Database Package: Drizzle Schema, Migrations, Seed
+Branch: feat/task-03-database-package
+
+OBJECTIVE
+Implement the @lucky-gift/db package with the complete Drizzle ORM schema, migration runner, seed data, and typed query helpers.
+
+DELIVERABLES
+
+packages/db/src/
+
+1. schema.ts — Drizzle table definitions (SQLite dialect):
+   - lotteryGames table (columns per db_schema.md)
+   - messageTemplates table
+   - gifts table (id: text UUID, gameId, occasionKey, message, senderName, senderEmail, amountPaidCents, stripeSessionId, stripePaymentStatus, createdAt integer ms)
+   - giftRecipients table (id autoincrement, giftId FK, recipientName, recipientEmail, recipientPhone, revealToken unique, seedHash, isRevealed, revealedAt)
+   - settings table (id autoincrement, key unique, value, description, updatedAt)
+   - adminSessions table (id text, createdAt, expiresAt)
+   - All relations defined using Drizzle relations()
+
+2. client.ts — Database client singleton:
+   - Opens better-sqlite3 connection to DATABASE_URL env var (fallback: './data/lucky-gift.db')
+   - Exports: db (drizzle instance), sqlite (raw better-sqlite3 instance for migrations)
+   - Ensures data/ directory exists
+
+3. migrate.ts — Migration runner script:
+   - Uses drizzle-kit migrate
+   - Run via: `pnpm --filter @lucky-gift/db run migrate`
+
+4. seed.ts — Seed script:
+   - Seeds lotteryGames with PWR, MML, MFL records
+   - Seeds messageTemplates with 5 occasions (birthday, anniversary, holiday, mothers_fathers_day, no_reason)
+     Each with: occasionKey, displayName, emoji, defaultMessage, greetingHtml, revealButtonText, gradientColors (JSON string of 2–3 CSS colors)
+   - Seeds settings with 6 default key-value rows (payments_enabled=false, max_recipients=5, email_from_address, email_from_name, site_name, gift_price_cents)
+   - Run via: `pnpm --filter @lucky-gift/db run seed`
+   - Idempotent: uses INSERT OR IGNORE / onConflictDoNothing
+
+5. queries/gifts.ts — Typed query helpers:
+   - createGift(data): Promise<Gift>
+   - createGiftRecipient(data): Promise<GiftRecipient>
+   - getGiftWithRecipient(giftId: string, revealToken: string): Promise<{ gift, recipient, game, template } | null>
+   - markRevealed(recipientId: number): Promise<void>
+
+6. queries/settings.ts — Settings query helpers:
+   - getAllSettings(): SettingEntry[]
+   - getSetting(key: string): string | null
+   - updateSetting(key: string, value: string): void
+   - updateSettings(entries: { key: string, value: string }[]): void
+
+7. queries/admin.ts — Admin session helpers:
+   - createSession(id: string): void
+   - getSession(id: string): { expiresAt: number } | null
+   - deleteSession(id: string): void
+   - deleteExpiredSessions(): void
+
+8. index.ts — Re-export db, all query helpers, all schema tables
+
+DRIZZLE CONFIG (packages/db/drizzle.config.ts):
+   - dialect: sqlite
+   - schema: ./src/schema.ts
+   - out: ./drizzle (migration files)
+   - dbCredentials: { url: process.env.DATABASE_URL || './data/lucky-gift.db' }
+
+PACKAGE.JSON SCRIPTS:
+   - "generate": "drizzle-kit generate"
+   - "migrate": "tsx src/migrate.ts"
+   - "seed": "tsx src/seed.ts"
+
+TESTS (packages/db/__tests__/)
+
+- schema.test.ts:
+  - Uses in-memory SQLite (:memory:) for tests
+  - createGift + createGiftRecipient inserts and retrieves correctly
+  - getGiftWithRecipient returns correct joined data
+  - getGiftWithRecipient returns null for wrong revealToken
+  - markRevealed sets isRevealed=1 and revealedAt
+
+- settings.test.ts:
+  - getSetting returns value for seeded key
+  - getSetting returns null for unknown key
+  - updateSetting changes value
+  - updateSettings batch updates multiple keys
+
+NOTES
+- data/ directory should be gitignored (*.db, *.db-shm, *.db-wal)
+- Use tsx for running TypeScript scripts directly
+- Do NOT import from apps/ — this package is app-agnostic

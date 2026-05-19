@@ -1,0 +1,52 @@
+TASK 01 — Monorepo Scaffolding
+Branch: feat/task-01-monorepo-scaffold
+
+OBJECTIVE
+Initialize the full pnpm + Turborepo monorepo structure with all workspace packages and apps defined but not yet implemented. Set up shared TypeScript configs, linting, and the root build pipeline.
+
+DELIVERABLES
+
+1. Root files:
+   - package.json (pnpm workspaces, turbo scripts: dev, build, test, lint)
+   - pnpm-workspace.yaml (apps/*, packages/*)
+   - turbo.json (pipeline: build depends on ^build, test depends on build)
+   - .gitignore (node_modules, .turbo, dist, .next, .expo, *.db)
+   - .nvmrc (20)
+   - tsconfig.base.json (strict mode, module: ESNext, moduleResolution: Bundler)
+
+2. packages/shared/
+   - package.json (name: @lucky-gift/shared, exports: ./src/index.ts)
+   - tsconfig.json (extends ../../tsconfig.base.json)
+   - src/index.ts (empty barrel export)
+
+3. packages/ui/
+   - package.json (name: @lucky-gift/ui, peerDeps: react, react-dom)
+   - tsconfig.json
+   - src/index.ts (empty barrel export)
+
+4. packages/db/
+   - package.json (name: @lucky-gift/db, deps: drizzle-orm, better-sqlite3)
+   - tsconfig.json
+   - src/index.ts (empty barrel export)
+
+5. apps/web/
+   - Bootstrap via: pnpm create next-app@latest web --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*"
+   - Add @lucky-gift/shared, @lucky-gift/ui, @lucky-gift/db as workspace deps
+   - Verify next.config.ts transpiles workspace packages
+
+6. apps/mobile/
+   - Bootstrap via: pnpm create expo-app@latest mobile --template blank-typescript
+   - Add @lucky-gift/shared as workspace dep
+   - Verify metro.config.js resolves workspace packages
+
+TESTS
+- Run `pnpm build` from root — all packages build without error
+- Run `pnpm --filter web dev` — Next.js starts on port 3000
+- Write a simple unit test in packages/shared/__tests__/smoke.test.ts that imports from @lucky-gift/shared and asserts true === true
+- Run `pnpm test` — smoke test passes
+
+NOTES
+- Use Node 20 LTS
+- Use exact versions: Next.js 15, React 19, Tailwind CSS v4, Expo SDK 53
+- Turbo version: latest stable
+- Do NOT implement any business logic in this task

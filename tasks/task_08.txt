@@ -1,0 +1,77 @@
+TASK 08 — API: Gift Submission, Reveal, Email (Brevo)
+Branch: feat/task-08-api-gifts-email
+
+OBJECTIVE
+Implement all Next.js API routes: gift creation, reveal data fetch, health check. Send reveal emails via Brevo for each recipient.
+
+DELIVERABLES
+
+apps/web/app/api/
+
+1. gifts/route.ts — POST /api/gifts:
+   - Parse + validate request body with giftPayloadSchema (from @lucky-gift/shared)
+   - Check if payments_enabled setting is "true" — return 402 if so (payments scaffolding)
+   - Generate gift UUID (crypto.randomUUID())
+   - Get createdAt = Date.now()
+   - For each recipient:
+     - Generate revealToken = crypto.randomUUID()
+     - Generate seedHash = await generateSeedHash(giftId, recipientEmail, createdAt) from @lucky-gift/shared
+   - Insert gift record via createGift() from @lucky-gift/db
+   - Insert gift_recipients records via createGiftRecipient() for each recipient
+   - Send Brevo email to each recipient (see email helpers below)
+   - Return 201 { giftId, recipientCount, emailsSent }
+   - On validation error: return 400 { error, details }
+   - Catch DB errors: return 500 { error: "Failed to create gift" }
+
+2. reveal/[giftId]/route.ts — GET /api/reveal/[giftId]?t={token}:
+   - Extract giftId from params, t from searchParams
+   - Call getGiftWithRecipient(giftId, t) from @lucky-gift/db
+   - If not found: return 404 { error: "Gift not found" }
+   - Call markRevealed(recipient.id) if not yet revealed
+   - Return 200 with { gift, recipient (name, email, seedHash, isRevealed), game, template }
+   - Do NOT return reveal_token in response
+
+3. health/route.ts — GET /api/health:
+   - Return 200 { status: "ok", timestamp: Date.now() }
+
+4. lib/email.ts — Brevo email helper:
+   - buildGiftEmailHtml({ senderName, messagePreview, revealUrl }): string
+     - Returns the HTML template from docs/email.md
+   - sendGiftEmail({ recipientName, recipientEmail, senderName, senderEmail, message, revealUrl }): Promise<boolean>
+     - Uses BREVO_API_KEY env var
+     - Uses email_from_address and email_from_name settings
+     - Returns true on success, false on failure (does not throw)
+     - Logs errors to console
+   - Uses @getbrevo/brevo SDK OR raw fetch to Brevo REST API v3
+     (Use raw fetch if SDK has CJS/ESM issues with Next.js 15)
+
+5. lib/settings-cache.ts — Lightweight settings reader:
+   - getSettingValue(key: string): string — reads from DB, caches for 60 seconds in module-level Map
+   - isPaymentsEnabled(): boolean
+   - getMaxRecipients(): number
+
+TESTS (apps/web/__tests__/api/)
+
+- gifts.test.ts (use vitest + msw or mock @lucky-gift/db):
+  - Valid payload → 201 with giftId
+  - Missing required fields → 400
+  - Too many recipients (>5) → 400
+  - Duplicate recipient emails → 400
+  - DB error → 500
+
+- reveal.test.ts:
+  - Valid giftId + token → 200 with correct shape
+  - Wrong token for valid giftId → 404
+  - Non-existent giftId → 404
+
+- email.test.ts:
+  - buildGiftEmailHtml includes sender name and reveal URL
+  - buildGiftEmailHtml includes truncated message preview
+  - sendGiftEmail calls Brevo API (mocked fetch)
+  - sendGiftEmail returns false on API error (does not throw)
+
+NOTES
+- Import @lucky-gift/db only in API routes (server-side only) — never in client components
+- BREVO_API_KEY must be in .env.local — not NEXT_PUBLIC_ prefixed
+- The reveal URL format: `${process.env.NEXT_PUBLIC_BASE_URL}/reveal/${giftId}?t=${revealToken}`
+- If BREVO_API_KEY is not set (local dev), log "Email skipped: BREVO_API_KEY not configured" and count as sent=0
