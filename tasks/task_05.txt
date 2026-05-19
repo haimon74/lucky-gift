@@ -1,0 +1,70 @@
+TASK 05 — Wizard Step 1: Game & Occasion Selection
+Branch: feat/task-05-wizard-step1
+
+OBJECTIVE
+Implement Step 1 of the gift wizard: lottery game selection and occasion selection with a live mini-preview card. Wire up localStorage persistence.
+
+DELIVERABLES
+
+apps/web/
+
+1. components/wizard/WizardShell.tsx:
+   - Full-width dark container with progress indicator (3 steps, gold active dots)
+   - Step titles: "1. Choose Game & Occasion" → "2. Your Message" → "3. Recipients & Sender"
+   - Renders current step component
+   - Back/Continue navigation buttons at bottom (gold Continue, ghost Back)
+   - Accepts: currentStep, onBack, onContinue, canContinue props
+
+2. components/wizard/WizardStep1.tsx:
+   - Game selector: 3 large clickable cards arranged in a row (responsive: 1 col mobile, 3 col desktop)
+     Each game card:
+       - Game emoji icon (🔴 Powerball, 🟡 Mega Millions, 💎 Millionaire for Life)
+       - Game name in gold
+       - Brief description "Pick 5 + 1 Powerball"
+       - Selected state: gold border glow + checkmark
+   - Occasion selector: 5 pill chips in a wrap row
+     Each pill: emoji + label, selected = gold bg + dark text
+   - Live Preview Card (updates as user selects):
+       - Shows: selected occasion emoji (large), occasion name, gradient background
+       - If no game selected: "← Select a game to preview"
+       - If no occasion selected: shows game name only
+       - Animates in/out with CSS transition
+   - Continue button enabled only when BOTH game and occasion selected
+   - Imports LOTTERY_GAMES and OCCASIONS from @lucky-gift/shared
+
+3. hooks/useWizardState.ts:
+   - Custom hook that manages full WizardState
+   - Reads initial state from localStorage (key: lucky_gift_wizard_state)
+   - Saves to localStorage on every state change (debounced 300ms)
+   - Exports: state, setStep, setGame, setOccasion, setMessage, setSenderName, setSenderEmail, addRecipient, updateRecipient, removeRecipient, resetWizard
+   - resetWizard: clears localStorage and resets to initial state
+
+4. app/page.tsx (update):
+   - Renders WizardShell with WizardStep1 for step=1
+   - Step 2 and 3 show placeholder cards (to be replaced in tasks 06, 07)
+   - Reads wizard state from useWizardState hook
+
+TESTS
+
+- WizardStep1.test.tsx:
+  - Renders all 3 game cards
+  - Renders all 5 occasion chips
+  - Clicking a game card selects it (gold border applied)
+  - Clicking an occasion chip selects it
+  - Continue button disabled when no game selected
+  - Continue button disabled when no occasion selected
+  - Continue button enabled when both selected
+  - Live preview updates when game+occasion selected
+
+- useWizardState.test.ts:
+  - Initial state has step=1, null gameId, null occasionKey
+  - setGame updates gameId
+  - setOccasion updates occasionKey
+  - State is saved to localStorage
+  - State is restored from localStorage on re-init
+  - resetWizard clears localStorage
+
+NOTES
+- Game cards must be large touch targets (min 120px height) for mobile
+- Occasion pills must be min 44px height for accessibility
+- Use @lucky-gift/shared constants — do NOT hardcode game data in the component

@@ -1,0 +1,95 @@
+TASK 12 — Stripe Payment Scaffolding (gated)
+Branch: feat/task-12-stripe-scaffolding
+
+OBJECTIVE
+Scaffold the complete Stripe payment integration, gated behind the payments_enabled setting. When payments_enabled=false (Phase 1), no payment UI is shown. When true, Step 3 becomes "Pay & Send" flow via Stripe Checkout.
+
+DELIVERABLES
+
+apps/web/
+
+1. app/api/checkout/route.ts — POST /api/checkout:
+   - Guard: if isPaymentsEnabled() is false → return 403 { error: "Payments not enabled" }
+   - Validate body: { giftId, gameId, occasionKey, recipientCount }
+   - Create Stripe Checkout Session:
+     - price_data: { currency: 'usd', unit_amount: gift_price_cents setting, product_data: { name: 'Lucky Gift — {game} for {recipientCount} recipient(s)' } }
+     - mode: 'payment'
+     - success_url: `${BASE_URL}/?payment=success&session_id={CHECKOUT_SESSION_ID}`
+     - cancel_url: `${BASE_URL}/?payment=cancelled`
+     - metadata: { pendingGiftData: JSON.stringify(wizardState) } (store wizard state for webhook)
+   - Return 200 { checkoutUrl }
+
+2. app/api/webhooks/stripe/route.ts — POST /api/webhooks/stripe:
+   - Read raw body (must use `export const runtime = 'nodejs'`)
+   - Verify Stripe signature using STRIPE_WEBHOOK_SECRET
+   - Handle `checkout.session.completed`:
+     - Retrieve pendingGiftData from session.metadata
+     - Parse and validate as GiftPayload
+     - Call same gift creation logic as POST /api/gifts (create gift record, send emails)
+     - Update stripe_payment_status → 'paid', store stripe_session_id
+   - Handle `checkout.session.expired`:
+     - Log and set status → 'failed' (no gift record to update if payment-first flow)
+   - Return 200 { received: true } for all handled events
+   - Return 400 for signature verification failure
+
+3. app/api/gifts/route.ts (update):
+   - When payments_enabled=true: instead of creating the gift immediately:
+     - Validate payload
+     - Return 402 { requiresPayment: true }
+     - Client then calls POST /api/checkout to get Stripe URL
+
+4. components/wizard/WizardStep4.tsx (new — payment step):
+   - Rendered as step 4 only when payments_enabled=true (checked from settings API on load)
+   - **Order Summary card**:
+     - Selected game name
+     - Occasion name
+     - Number of recipients: {n}
+     - Price: $10.00
+   - "Pay with Card" gold button → POST /api/checkout → redirect to Stripe Checkout URL
+   - "← Back" button
+   - Note: "You will be redirected to Stripe's secure checkout"
+   - Stripe logo/badge for trust
+
+5. app/page.tsx (update):
+   - On mount: fetch payments_enabled setting
+   - If true: wizard has 4 steps, Step 3 button label = "Continue →", Step 4 is payment
+   - If false: wizard has 3 steps, Step 3 button label = "🍀 Send Lucky Numbers — Free!"
+   - Handle URL param ?payment=success → show SuccessScreen
+   - Handle URL param ?payment=cancelled → show cancellation message in step 3
+
+6. lib/stripe.ts:
+   - getStripeClient(): Stripe — returns initialized Stripe instance (cached module singleton)
+   - Guard: throws if STRIPE_SECRET_KEY not set
+
+TESTS
+
+- api/checkout.test.ts:
+  - Returns 403 when payments_enabled=false
+  - Returns 200 with checkoutUrl when enabled (mock Stripe SDK)
+  - Returns 400 on invalid payload
+
+- api/webhooks/stripe.test.ts:
+  - Returns 400 on invalid signature
+  - Handles checkout.session.completed: gift created, emails sent (mocked)
+  - Handles checkout.session.expired: no crash
+
+- WizardStep4.test.tsx:
+  - Renders order summary with correct game + price
+  - Clicking "Pay" calls POST /api/checkout (mocked)
+  - Shows redirect message
+
+- page.tsx (integration):
+  - Shows 3 steps when payments_enabled=false
+  - Shows 4 steps when payments_enabled=true
+  - Handles ?payment=success param showing SuccessScreen
+
+PACKAGES TO ADD:
+   - stripe (official Stripe Node.js SDK)
+   - @stripe/stripe-js (browser Stripe.js — for future embedded checkout if needed)
+
+NOTES
+- STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET must be in .env.local — never NEXT_PUBLIC_
+- In test environment: mock the stripe module entirely
+- The webhook route MUST use raw body parsing — Next.js App Router: export config { api: { bodyParser: false } } or use request.arrayBuffer()
+- When payments are disabled (Phase 1): no Stripe SDK is initialized, no keys are required
+- All Stripe-related env vars are optional and documented in docs/deployment.md

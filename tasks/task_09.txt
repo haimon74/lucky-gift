@@ -1,0 +1,93 @@
+TASK 09 — Reveal Page: Gift Display, Number Animation, Sound
+Branch: feat/task-09-reveal-page
+
+OBJECTIVE
+Implement the full gift reveal page at /reveal/[giftId]. Fetch gift data, display the personalized message/greeting, and animate the lucky number reveal with fairy dust effect and sound.
+
+DELIVERABLES
+
+apps/web/
+
+1. app/reveal/[giftId]/page.tsx — Server component wrapper:
+   - Renders the RevealClient component (client-side)
+   - Passes giftId and searchParam t as props
+
+2. components/reveal/RevealClient.tsx — Main client component:
+   - On mount: fetch GET /api/reveal/[giftId]?t={token}
+   - Loading state: centered gold Spinner with "Opening your gift..." text
+   - Error states:
+     - 404/410: "This gift link is invalid or has expired." with 🔗 link back to "/"
+     - Network error: "Unable to load your gift. Please try again." + retry button
+   - Success state: renders RevealCard
+
+3. components/reveal/RevealCard.tsx:
+   - **Before reveal**:
+     - Full-screen dark background
+     - Occasion visual: large emoji + gradient card (same as step 2 preview)
+     - Interpolated greeting HTML rendered (dangerouslySetInnerHTML with DOMPurify sanitization)
+     - Sender's message (italic, gold-tinted)
+     - "from: {senderName}"
+     - At bottom: large gold button "🎰 {revealButtonText from template}"
+   - **After reveal** (when button clicked):
+     - `generateLotteryNumbers(seedHash, game)` called from @lucky-gift/shared
+     - Numbers revealed one-by-one with 150ms stagger delay
+     - Each number in a ball component (see NumberBall below)
+     - Fairy dust/star particle animation (see ParticleEffect below)
+     - Cheerful chime sound plays (see SoundEffect below)
+     - "✨ Your Lucky Numbers ✨" heading above balls
+     - Bonus ball shown separately with its colored label ("Powerball", "Mega Ball", etc.)
+   - **After reveal** bottom section:
+     - "🍀 Send a lucky gift back to {senderName}"
+     - Link: `/?prefill={encodedPrefillData}` where prefillData = { senderName: originalSenderName, senderEmail: originalSenderEmail, gameId: giftGameId }
+       (so wizard opens pre-populated with original sender as recipient)
+
+4. components/reveal/NumberBall.tsx:
+   - Circular ball component
+   - White ball: white background, dark number, slight shadow
+   - Bonus ball: colored per game (red #e74c3c for Powerball, gold #f0c040 for Mega Millions, teal #1abc9c for MFL)
+   - Size: 56px diameter on mobile, 72px on desktop
+   - Pop-in animation: scale from 0 → 1.2 → 1.0 with spring-like CSS keyframe
+   - Staggered render (each ball appears with delay based on index * 150ms)
+
+5. components/reveal/ParticleEffect.tsx:
+   - Full-screen overlay (pointer-events: none)
+   - Pure CSS or lightweight JS canvas animation
+   - 50–80 particles: gold/white/yellow sparkles, stars (✨)
+   - Float up and fade out over 2–3 seconds
+   - Triggered by: isRevealed prop changing to true
+
+6. hooks/useRevealSound.ts:
+   - Generates a cheerful chime using Web Audio API (no external audio file needed)
+   - play(): creates short ascending tone sequence (C5 → E5 → G5 → C6)
+   - Each note: 80ms, sine wave, fade-out envelope
+   - Gracefully fails if Web Audio API not available (catch errors silently)
+   - Called when numbers are revealed
+
+7. app/reveal/[giftId]/page.tsx also handles the prefill query:
+   - Homepage (app/page.tsx) reads `?prefill=` from URL on mount
+   - If present: pre-fill wizard state with the decoded data (senderName→recipient name, senderEmail→recipient email, gameId)
+   - Then navigate to step 3 (recipients) directly
+
+TESTS
+
+- RevealCard.test.tsx:
+  - Before reveal: shows occasion emoji and reveal button
+  - Before reveal: shows personalized greeting with recipient/sender names
+  - Clicking reveal button calls generateLotteryNumbers
+  - After reveal: NumberBall components rendered (5 main + 1 bonus)
+  - After reveal: reveal button hidden
+  - After reveal: "Send lucky back to" link shown with correct sender name
+  - Link href includes encoded prefill data
+
+- NumberBall.test.tsx:
+  - Renders main ball (white) with correct number
+  - Renders bonus ball with correct color class per game
+
+- generateLotteryNumbers (from @lucky-gift/shared — already tested in task_02):
+  - Same seedHash + PWR game → same 5 main numbers in [1,69] + 1 bonus in [1,26]
+
+NOTES
+- Do NOT use dangerouslySetInnerHTML without DOMPurify (install isomorphic-dompurify or dompurify)
+- Particle effect should be CSS-only if possible for performance
+- Sound uses Web Audio API (no mp3/wav files needed) — must check for browser support
+- Number balls appear in sorted ascending order for main numbers, bonus ball last

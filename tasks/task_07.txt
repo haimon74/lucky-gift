@@ -1,0 +1,83 @@
+TASK 07 — Wizard Step 3: Recipients & Sender + Submission
+Branch: feat/task-07-wizard-step3
+
+OBJECTIVE
+Implement Step 3 of the wizard: recipient cards (up to max_recipients), sender details, form validation, and gift submission to the API. Show success state after submission.
+
+DELIVERABLES
+
+apps/web/
+
+1. components/wizard/WizardStep3.tsx:
+   - **"Who Gets Lucky?" section**:
+     - Heading with emoji: "🎁 Who Gets Lucky?"
+     - Recipient cards — one per recipient:
+       Each card (dark surface, gold border accent):
+         - Name field (required) — large text input
+         - Email field (required) — email input with validation
+         - Phone field (optional) — tel input
+         - Remove (×) button top-right (hidden when only 1 recipient)
+     - "+ Add Another Recipient" button (ghost/outline gold style)
+       - Disabled when recipients.length >= max_recipients (read from settings or default 5)
+       - Shows "Max {max_recipients} recipients reached" tooltip when disabled
+   - **"From" section**:
+     - Heading: "✉️ From"
+     - Your Name field (required)
+     - Your Email field (required, valid email)
+   - **Submit button**:
+     - When payments_enabled=false: gold button "🍀 Send Lucky Numbers — Free!"
+     - When payments_enabled=true: "💳 Pay $10 & Send"
+     - Disabled while submitting
+     - Shows spinner while loading
+
+2. hooks/useGiftSubmit.ts:
+   - Validates full wizard state before submitting
+   - POST /api/gifts with GiftPayload
+   - Returns: { submit, isLoading, error, isSuccess }
+   - On success: calls resetWizard() from useWizardState
+
+3. components/wizard/SuccessScreen.tsx:
+   - Full-page success state (replaces wizard after submission)
+   - Animated gold star burst / confetti (CSS animation)
+   - "🎉 Lucky Numbers Sent!" heading
+   - "Your gift has been sent to {n} lucky recipient(s)!"
+   - List of recipient names
+   - "Send Another Gift" button → calls resetWizard, navigates back to step 1
+
+4. app/page.tsx (update):
+   - Wire up all 3 steps with useWizardState
+   - After successful submission, render SuccessScreen
+   - Display API errors inline (below submit button, red text)
+
+VALIDATION RULES (client-side):
+   - Each recipient: name required, email required + valid format
+   - Sender: name required, email required + valid format
+   - No duplicate recipient emails
+   - At least 1 recipient
+
+TESTS
+
+- WizardStep3.test.tsx:
+  - Renders 1 recipient card by default
+  - "+ Add" button adds a new recipient card
+  - "+ Add" button disabled at max_recipients (5)
+  - Remove button removes recipient card
+  - Remove button hidden when only 1 recipient
+  - Required field validation shows error messages
+  - Duplicate email shows error
+  - Submit button disabled while loading
+
+- useGiftSubmit.test.ts:
+  - Calls POST /api/gifts with correct payload (mock fetch)
+  - isLoading true during fetch
+  - isSuccess true on 201 response
+  - error set on non-201 response
+
+- SuccessScreen.test.tsx:
+  - Shows correct recipient count
+  - "Send Another Gift" button calls resetWizard
+
+NOTES
+- max_recipients should be fetched from /api/settings on page load (or use 5 as default if fetch fails)
+- Form fields use react-hook-form for validation OR custom validation with useState
+- All validation must run before calling the API — do not rely on server-side validation alone

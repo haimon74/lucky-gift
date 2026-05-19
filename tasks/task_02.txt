@@ -1,0 +1,79 @@
+TASK 02 — Shared Package: Types, Lottery Logic, RNG
+Branch: feat/task-02-shared-package
+
+OBJECTIVE
+Implement the @lucky-gift/shared package with all shared business logic, types, and utilities used by both web and mobile apps.
+
+DELIVERABLES
+
+packages/shared/src/
+
+1. types.ts — All shared TypeScript interfaces:
+   - LotteryGame { gameId, name, mainCount, mainMin, mainMax, bonusCount, bonusMin, bonusMax, bonusName }
+   - OccasionTemplate { occasionKey, displayName, emoji, defaultMessage, revealButtonText, gradientColors: string[] }
+   - Recipient { id, name, email, phone? }
+   - WizardState { step, gameId, occasionKey, message, senderName, senderEmail, recipients: Recipient[] }
+   - GiftPayload (POST /api/gifts request body)
+   - RevealData (GET /api/reveal response)
+   - SettingEntry { key, value, description? }
+
+2. lottery-games.ts — Static game definitions array:
+   - POWERBALL: gameId="PWR", mainCount=5, mainMin=1, mainMax=69, bonusCount=1, bonusMin=1, bonusMax=26, bonusName="Powerball"
+   - MEGA_MILLIONS: gameId="MML", mainCount=5, mainMin=1, mainMax=70, bonusCount=1, bonusMin=1, bonusMax=24, bonusName="Mega Ball"
+   - MILLIONAIRE_FOR_LIFE: gameId="MFL", mainCount=5, mainMin=1, mainMax=58, bonusCount=1, bonusMin=1, bonusMax=5, bonusName="Millionaire Ball"
+   - Export: LOTTERY_GAMES: LotteryGame[], getLotteryGame(gameId: string): LotteryGame | undefined
+
+3. occasions.ts — Static occasion definitions array:
+   - birthday, anniversary, holiday, mothers_fathers_day, no_reason
+   - Each with emoji, displayName, defaultMessage, revealButtonText, gradientColors
+   - Export: OCCASIONS: OccasionTemplate[], getOccasion(key: string): OccasionTemplate | undefined
+
+4. mulberry32.ts — PRNG implementation:
+   - mulberry32(seed: number): () => number
+   - pickUniqueNumbers(rng: () => number, count: number, min: number, max: number): number[]
+   - generateLotteryNumbers(seedHash: string, game: LotteryGame): { main: number[], bonus: number[] }
+     (derives seed from first 8 chars of seedHash parsed as hex int)
+
+5. seed-generator.ts — Seed hash computation (for use in server-side API):
+   - async generateSeedHash(giftId: string, recipientEmail: string, createdAtMs: number): Promise<string>
+   - Uses Web Crypto API (globalThis.crypto.subtle) for SHA-256
+   - Input: `${giftId}:${recipientEmail}:${createdAtMs}`
+   - Returns: first 8 chars of hex digest
+
+6. validators.ts — Zod schemas:
+   - recipientSchema
+   - giftPayloadSchema (validates POST /api/gifts body)
+   - settingsUpdateSchema
+
+7. index.ts — Re-export everything from all above files
+
+TESTS (packages/shared/__tests__/)
+
+- mulberry32.test.ts:
+  - Same seed always produces same sequence
+  - pickUniqueNumbers returns correct count
+  - pickUniqueNumbers returns values within [min, max]
+  - pickUniqueNumbers returns no duplicates
+  - generateLotteryNumbers returns correct count per game (5 main + 1 bonus)
+  - Powerball bonus in [1,26], Mega Millions bonus in [1,24], MFL bonus in [1,5]
+
+- lottery-games.test.ts:
+  - getLotteryGame("PWR") returns Powerball
+  - getLotteryGame("INVALID") returns undefined
+  - All 3 games present in LOTTERY_GAMES array
+
+- seed-generator.test.ts:
+  - generateSeedHash returns 8-char hex string
+  - Same inputs always produce same hash
+  - Different inputs produce different hashes
+
+- validators.test.ts:
+  - Valid gift payload passes
+  - Missing required fields fail
+  - More than 5 recipients fails
+  - Invalid email fails
+
+NOTES
+- mulberry32 must be pure JS (no Node.js deps) so it works in browser and React Native
+- seed-generator uses globalThis.crypto — works in Node 20+, browsers, and React Native
+- Do NOT import from @lucky-gift/db in this package (no circular deps)

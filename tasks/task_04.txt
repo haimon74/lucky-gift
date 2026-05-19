@@ -1,0 +1,82 @@
+TASK 04 — Web App Shell: Dark Theme, Layout, Navigation
+Branch: feat/task-04-web-shell
+
+OBJECTIVE
+Set up the Next.js 15 web app with the dark theme, global layout, shared UI components, Tailwind config, and page stubs. No business logic yet — just the skeleton.
+
+DELIVERABLES
+
+apps/web/
+
+1. tailwind.config.ts — Custom design tokens:
+   - Dark background: #0a0a0f
+   - Surface: #12121a
+   - Border: #1e1e2e
+   - Gold: #c9a227, #f0c040, #ffd700
+   - Red envelope: #c0392b
+   - Text: #f5f5f0, #a0a0b0
+   - Gradient: extend with gradient-gold, gradient-dark
+   - Add custom animation: shimmer, pop-in, float
+
+2. app/globals.css:
+   - Tailwind directives
+   - CSS custom properties for all theme colors
+   - Body: dark bg, gold cursor highlight
+   - Scrollbar: dark themed (webkit)
+   - .gold-text class: gradient text clip (gold gradient)
+   - .btn-gold class: gold gradient button with hover animation
+   - .card-dark class: dark surface card with gold border glow on hover
+
+3. app/layout.tsx — Root layout:
+   - Dark bg, correct meta tags
+   - Import globals.css
+   - Header component (logo + nav)
+   - Main content area
+   - Footer
+
+4. components/Header.tsx:
+   - Logo: "🍀 Lucky Gift" in gold gradient text
+   - Responsive: hamburger on mobile
+   - No navigation links needed for Phase 1
+
+5. components/Footer.tsx:
+   - Simple: "© 2025 Lucky Gift · luck-gift.haimazar.us"
+   - Dark, subtle
+
+6. packages/ui/src/ — Shared UI components:
+   - Button.tsx: variants (gold, ghost, danger), sizes (sm, md, lg), loading state
+   - Card.tsx: dark surface card with optional gold border
+   - Input.tsx: dark themed text input with label and error
+   - Textarea.tsx: dark themed textarea
+   - Badge.tsx: pill badge for game/occasion chips
+   - Spinner.tsx: gold spinning loader
+   - All components: TypeScript, Tailwind classes, forwardRef where appropriate
+
+7. app/page.tsx — Wizard page stub:
+   - Renders placeholder: "Lucky Gift Wizard — Coming Soon"
+   - Will be replaced in tasks 05–07
+
+8. app/reveal/[giftId]/page.tsx — Reveal page stub:
+   - Renders placeholder: "Reveal Page — Coming Soon"
+
+9. app/settings/page.tsx — Settings page stub:
+   - Renders placeholder: "Settings — Coming Soon"
+
+10. app/settings/login/page.tsx — Login page stub
+
+TESTS
+
+- Component snapshot tests or render tests using Vitest + @testing-library/react:
+  - Button renders with gold variant
+  - Button shows spinner when loading=true
+  - Card renders children
+  - Input shows error message when error prop provided
+  - Input calls onChange handler
+
+- All existing pnpm test suite passes
+
+NOTES
+- Use Tailwind CSS v4 syntax
+- All components must be responsive (mobile-first)
+- No hardcoded pixel widths — use Tailwind responsive prefixes (sm:, md:, lg:)
+- Prefer CSS animations over JS for simple animations
