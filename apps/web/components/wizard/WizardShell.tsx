@@ -11,6 +11,7 @@ interface WizardShellProps {
   canContinue: boolean;
   continueLabel?: string;
   showBack?: boolean;
+  hideContinue?: boolean;
   children: React.ReactNode;
 }
 
@@ -24,6 +25,7 @@ export function WizardShell({
   canContinue,
   continueLabel = 'Continue →',
   showBack = false,
+  hideContinue = false,
   children,
 }: WizardShellProps) {
   const steps = STEP_LABELS.slice(0, totalSteps);
@@ -80,14 +82,16 @@ export function WizardShell({
         ) : (
           <div />
         )}
-        <Button
-          variant="gold"
-          onClick={onContinue}
-          disabled={!canContinue}
-          size="lg"
-        >
-          {continueLabel}
-        </Button>
+        {!hideContinue && (
+          <Button
+            variant="gold"
+            onClick={onContinue}
+            disabled={!canContinue}
+            size="lg"
+          >
+            {continueLabel}
+          </Button>
+        )}
       </div>
     </div>
   );
