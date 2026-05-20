@@ -1,6 +1,6 @@
 import { eq, lt } from 'drizzle-orm';
-import { db } from '../client.js';
-import { adminSessions } from '../schema.js';
+import { db } from '../client';
+import { adminSessions } from '../schema';
 
 export function createSession(id: string): void {
   const now = Date.now();

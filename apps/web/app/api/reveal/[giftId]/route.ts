@@ -55,15 +55,15 @@ export async function GET(
     game: {
       gameId: game.gameId,
       name: game.name,
-      mainNumbers: game.mainNumbers,
+      mainCount: game.mainCount,
       mainMin: game.mainMin,
       mainMax: game.mainMax,
-      bonusNumbers: game.bonusNumbers,
+      bonusCount: game.bonusCount,
       bonusMin: game.bonusMin,
       bonusMax: game.bonusMax,
     },
     template: {
-      name: template.name,
+      name: template.displayName,
       revealButtonText: template.revealButtonText,
     },
   });

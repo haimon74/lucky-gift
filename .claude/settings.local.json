@@ -6,9 +6,51 @@
       "Bash(pnpm create *)",
       "Bash(pnpm approve-builds *)",
       "Bash(pnpm install *)",
-      "Bash(pnpm --filter @lucky-gift/shared test)",
+      "Bash(pnpm --filter *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m *)",
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(cd *)",
+      "Bash(npx *)",
+      "Bash(pnpm run *)",
+      "Bash(mkdir *)",
+      "PowerShell(git checkout *)",
+      "PowerShell(pnpm --version)",
+      "PowerShell(pnpm create *)",
+      "PowerShell(pnpm approve-builds *)",
+      "PowerShell(pnpm install *)",
+      "PowerShell(pnpm --filter *)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit -m *)",
+      "PowerShell(git push *)",
+      "PowerShell(gh pr create *)",
+      "PowerShell(gh pr *)",
+      "PowerShell(git pull *)",
+      "PowerShell(git stash *)",
+      "PowerShell(cd *)",
+      "PowerShell(npx *)",
+      "PowerShell(pnpm run *)",
+      "PowerShell(mkdir *)"      
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git reset --hard *)",
+      "PowerShell(Remove-Item * -Recurse *)",
+      "PowerShell(Format-Volume *)",
+      "Bash(git push * --force)",
+      "Bash(git push origin main)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)"
+    ],
+    "additionalDirectories": [
+      "c:\\dev\\lucky-gift\\apps\\web\\app\\reveal"
     ]
   }
 }

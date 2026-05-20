@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { WizardShell } from '@/components/wizard/WizardShell';
 import { WizardStep1 } from '@/components/wizard/WizardStep1';
@@ -26,7 +26,7 @@ async function fetchSettings(): Promise<AppSettings> {
   return { max_recipients: 5, payments_enabled: false };
 }
 
-export default function HomePage() {
+function HomeContent() {
   const {
     state,
     setStep,
@@ -230,5 +230,17 @@ export default function HomePage() {
         />
       )}
     </WizardShell>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-2xl animate-pulse" style={{ color: '#c9a227' }}>🍀</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

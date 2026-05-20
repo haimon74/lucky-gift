@@ -99,7 +99,7 @@ export function WizardStep4({
               Occasion
             </dt>
             <dd className="text-sm font-semibold" style={{ color: '#f5f5f0' }}>
-              {occasion?.label ?? occasionKey ?? '—'}
+              {occasion?.displayName ?? occasionKey ?? '—'}
             </dd>
           </div>
 

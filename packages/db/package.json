@@ -22,6 +22,7 @@
     "vitest": "^3.1.4"
   },
   "dependencies": {
+    "@lucky-gift/shared": "workspace:*",
     "better-sqlite3": "^11.10.0",
     "drizzle-orm": "^0.43.1"
   }

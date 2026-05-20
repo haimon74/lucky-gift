@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
-import * as schema from './schema.js';
+import * as schema from './schema';
 
 const DATABASE_URL = process.env['DATABASE_URL'] ?? './data/lucky-gift.db';
 

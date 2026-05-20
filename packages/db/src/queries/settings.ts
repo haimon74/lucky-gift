@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { db } from '../client.js';
-import { settings } from '../schema.js';
+import { db } from '../client';
+import { settings } from '../schema';
 import type { SettingEntry } from '@lucky-gift/shared';
 
 export function getAllSettings(): SettingEntry[] {

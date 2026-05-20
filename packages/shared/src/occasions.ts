@@ -1,4 +1,4 @@
-import type { OccasionTemplate } from './types.js';
+import type { OccasionTemplate } from './types';
 
 export const OCCASIONS: OccasionTemplate[] = [
   {

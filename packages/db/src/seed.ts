@@ -1,5 +1,5 @@
-import { db, sqlite } from './client.js';
-import { lotteryGames, messageTemplates, settings } from './schema.js';
+import { db, sqlite } from './client';
+import { lotteryGames, messageTemplates, settings } from './schema';
 import { sql } from 'drizzle-orm';
 
 const GAMES = [

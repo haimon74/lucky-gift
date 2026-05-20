@@ -20,11 +20,8 @@ interface WizardStep3Props {
   onSubmit: () => void;
 }
 
-interface FieldErrors {
-  [recipientId: string]: { name?: string; email?: string };
-  senderName?: string;
-  senderEmail?: string;
-}
+type RecipientErrors = Record<string, { name?: string; email?: string }>;
+interface SenderErrors { senderName?: string; senderEmail?: string }
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -45,12 +42,13 @@ export function WizardStep3({
   onChangeSenderEmail,
   onSubmit,
 }: WizardStep3Props) {
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [recipientErrors, setRecipientErrors] = useState<RecipientErrors>({});
+  const [senderErrors, setSenderErrors] = useState<SenderErrors>({});
 
   function validate(): boolean {
-    const newErrors: FieldErrors = {};
+    const newRecipErrors: RecipientErrors = {};
+    const newSenderErrors: SenderErrors = {};
 
-    const emails = recipients.map((r) => r.email.toLowerCase().trim());
     const emailSet = new Set<string>();
 
     recipients.forEach((r) => {
@@ -64,18 +62,19 @@ export function WizardStep3({
         recipErrors.email = 'Duplicate email address';
       }
       emailSet.add(r.email.toLowerCase().trim());
-      if (Object.keys(recipErrors).length) newErrors[r.id] = recipErrors;
+      if (Object.keys(recipErrors).length) newRecipErrors[r.id] = recipErrors;
     });
 
-    if (!senderName.trim()) newErrors.senderName = 'Your name is required';
+    if (!senderName.trim()) newSenderErrors.senderName = 'Your name is required';
     if (!senderEmail.trim()) {
-      newErrors.senderEmail = 'Your email is required';
+      newSenderErrors.senderEmail = 'Your email is required';
     } else if (!validateEmail(senderEmail)) {
-      newErrors.senderEmail = 'Enter a valid email address';
+      newSenderErrors.senderEmail = 'Enter a valid email address';
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setRecipientErrors(newRecipErrors);
+    setSenderErrors(newSenderErrors);
+    return Object.keys(newRecipErrors).length === 0 && Object.keys(newSenderErrors).length === 0;
   }
 
   function handleSubmit() {
@@ -118,9 +117,9 @@ export function WizardStep3({
               value={r.name}
               onChange={(e) => {
                 onUpdateRecipient(r.id, { name: e.target.value });
-                if (errors[r.id]?.name) setErrors((prev) => ({ ...prev, [r.id]: { ...prev[r.id], name: undefined } }));
+                if (recipientErrors[r.id]?.name) setRecipientErrors((prev) => ({ ...prev, [r.id]: { ...prev[r.id], name: undefined } }));
               }}
-              error={errors[r.id]?.name}
+              error={recipientErrors[r.id]?.name}
               placeholder="Recipient's name"
               required
             />
@@ -130,9 +129,9 @@ export function WizardStep3({
               value={r.email}
               onChange={(e) => {
                 onUpdateRecipient(r.id, { email: e.target.value });
-                if (errors[r.id]?.email) setErrors((prev) => ({ ...prev, [r.id]: { ...prev[r.id], email: undefined } }));
+                if (recipientErrors[r.id]?.email) setRecipientErrors((prev) => ({ ...prev, [r.id]: { ...prev[r.id], email: undefined } }));
               }}
-              error={errors[r.id]?.email}
+              error={recipientErrors[r.id]?.email}
               placeholder="recipient@example.com"
               required
             />
@@ -179,9 +178,9 @@ export function WizardStep3({
             value={senderName}
             onChange={(e) => {
               onChangeSenderName(e.target.value);
-              if (errors.senderName) setErrors((prev) => ({ ...prev, senderName: undefined }));
+              if (senderErrors.senderName) setSenderErrors((prev) => ({ ...prev, senderName: undefined }));
             }}
-            error={errors.senderName as string | undefined}
+            error={senderErrors.senderName}
             placeholder="Your name"
             required
           />
@@ -191,9 +190,9 @@ export function WizardStep3({
             value={senderEmail}
             onChange={(e) => {
               onChangeSenderEmail(e.target.value);
-              if (errors.senderEmail) setErrors((prev) => ({ ...prev, senderEmail: undefined }));
+              if (senderErrors.senderEmail) setSenderErrors((prev) => ({ ...prev, senderEmail: undefined }));
             }}
-            error={errors.senderEmail as string | undefined}
+            error={senderErrors.senderEmail}
             placeholder="your@email.com"
             required
           />

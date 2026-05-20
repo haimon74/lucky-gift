@@ -1,4 +1,4 @@
-import type { LotteryGame } from './types.js';
+import type { LotteryGame } from './types';
 
 export function mulberry32(seed: number): () => number {
   let s = seed;

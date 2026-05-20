@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { db } from '../client.js';
-import { gifts, giftRecipients, lotteryGames, messageTemplates } from '../schema.js';
+import { db } from '../client';
+import { gifts, giftRecipients, lotteryGames, messageTemplates } from '../schema';
 
 export interface CreateGiftData {
   id: string;
