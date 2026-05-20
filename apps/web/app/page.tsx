@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { WizardShell } from '@/components/wizard/WizardShell';
 import { WizardStep1 } from '@/components/wizard/WizardStep1';
 import { WizardStep2 } from '@/components/wizard/WizardStep2';
@@ -40,9 +41,33 @@ export default function HomePage() {
   } = useWizardState();
 
   const [settings, setSettings] = useState<AppSettings>({ max_recipients: 5, payments_enabled: false });
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchSettings().then(setSettings);
+  }, []);
+
+  // Handle ?prefill= from "Send lucky back" link on reveal page
+  useEffect(() => {
+    const prefill = searchParams?.get('prefill');
+    if (!prefill) return;
+    try {
+      const data = JSON.parse(decodeURIComponent(prefill)) as {
+        senderName?: string;
+        senderEmail?: string;
+        gameId?: string;
+      };
+      if (data.gameId) setGame(data.gameId);
+      if (data.senderName) {
+        updateRecipient(state.recipients[0]!.id, { name: data.senderName });
+      }
+      // Jump to step 3 recipients
+      setStep(3);
+    } catch {
+      // Malformed prefill — ignore
+    }
+    // Run once on mount only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { submit, isLoading, error: submitError, isSuccess } = useGiftSubmit({
