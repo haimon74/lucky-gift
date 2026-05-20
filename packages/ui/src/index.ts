@@ -1,2 +1,12 @@
-// Barrel export — populated in Task 04
-export {};
+export { Button } from './Button.js';
+export type { ButtonProps } from './Button.js';
+export { Card } from './Card.js';
+export type { CardProps } from './Card.js';
+export { Input } from './Input.js';
+export type { InputProps } from './Input.js';
+export { Textarea } from './Textarea.js';
+export type { TextareaProps } from './Textarea.js';
+export { Badge } from './Badge.js';
+export type { BadgeProps } from './Badge.js';
+export { Spinner } from './Spinner.js';
+export type { SpinnerProps } from './Spinner.js';
