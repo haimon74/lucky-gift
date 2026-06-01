@@ -83,8 +83,12 @@ export function useGiftActions() {
           setIsEmailSuccess(true);
         }
       } else {
-        // Gift already saved — just (re)send emails
-        const res = await fetch(`/api/gifts/${savedGiftId}/email`, { method: 'POST' });
+        // Gift already saved — just (re)send emails; include senderEmail to prove ownership
+        const res = await fetch(`/api/gifts/${savedGiftId}/email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ senderEmail: state.senderEmail }),
+        });
         const data = await res.json() as { emailsSent?: number; error?: string };
         if (!res.ok) throw new Error(data.error ?? 'Failed to send emails');
         setEmailsSent(data.emailsSent ?? 0);
