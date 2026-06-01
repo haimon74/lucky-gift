@@ -1,4 +1,5 @@
 import type { OccasionTemplate } from './types';
+import { getHolidayTemplate } from './holidays';
 
 export const OCCASIONS: OccasionTemplate[] = [
   {
@@ -48,5 +49,5 @@ export const OCCASIONS: OccasionTemplate[] = [
 ];
 
 export function getOccasion(occasionKey: string): OccasionTemplate | undefined {
-  return OCCASIONS.find((o) => o.occasionKey === occasionKey);
+  return OCCASIONS.find((o) => o.occasionKey === occasionKey) ?? getHolidayTemplate(occasionKey);
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { LOTTERY_GAMES, OCCASIONS } from '@lucky-gift/shared';
+import { LOTTERY_GAMES, OCCASIONS, getNextHoliday } from '@lucky-gift/shared';
 import { GiftCardPreview } from '@/components/GiftCardPreview';
 
 interface WizardStep1Props {
@@ -29,6 +29,15 @@ const GAME_DESCRIPTIONS: Record<string, string> = {
 };
 
 export function WizardStep1({ gameId, occasionKey, onSelectGame, onSelectOccasion }: WizardStep1Props) {
+  const { template: nextHolidayTemplate, date: nextHolidayDate } = getNextHoliday();
+  const nextHolidayDateLabel = nextHolidayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const occasionsWithHoliday = OCCASIONS.map<typeof OCCASIONS[0] & { dateLabel?: string }>((o) =>
+    o.occasionKey === 'holiday'
+      ? { ...nextHolidayTemplate, dateLabel: nextHolidayDateLabel }
+      : o,
+  );
+
   return (
     <div className="space-y-8">
       <div>
@@ -111,7 +120,7 @@ export function WizardStep1({ gameId, occasionKey, onSelectGame, onSelectOccasio
           Pick the perfect occasion for your gift
         </p>
         <div className="flex flex-wrap gap-3">
-          {OCCASIONS.map((occasion) => {
+          {occasionsWithHoliday.map((occasion) => {
             const isSelected = occasionKey === occasion.occasionKey;
             return (
               <button
@@ -129,7 +138,12 @@ export function WizardStep1({ gameId, occasionKey, onSelectGame, onSelectOccasio
                 aria-pressed={isSelected}
               >
                 <span>{occasion.emoji}</span>
-                <span>{occasion.displayName}</span>
+                <span>
+                  {occasion.displayName}
+                  {occasion.dateLabel && (
+                    <span style={{ opacity: 0.7, marginLeft: '4px' }}>· {occasion.dateLabel}</span>
+                  )}
+                </span>
               </button>
             );
           })}

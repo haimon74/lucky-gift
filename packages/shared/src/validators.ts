@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { LOTTERY_GAMES } from './lottery-games';
 import { OCCASIONS } from './occasions';
+import { ALL_HOLIDAY_KEYS } from './holidays';
 
 const VALID_GAME_IDS = LOTTERY_GAMES.map((g) => g.gameId);
-const VALID_OCCASION_KEYS = OCCASIONS.map((o) => o.occasionKey);
+const VALID_OCCASION_KEYS = [...OCCASIONS.map((o) => o.occasionKey), ...ALL_HOLIDAY_KEYS];
 
 export const recipientSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),

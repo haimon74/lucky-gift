@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { WizardState, Recipient } from '@lucky-gift/shared';
-import { OCCASIONS } from '@lucky-gift/shared';
+import { getOccasion } from '@lucky-gift/shared';
 
 const STORAGE_KEY = 'lucky_gift_wizard_state';
 
 function getDefaultMessage(occasionKey: string | null): string {
   if (!occasionKey) return '';
-  return OCCASIONS.find((o) => o.occasionKey === occasionKey)?.defaultMessage ?? '';
+  return getOccasion(occasionKey)?.defaultMessage ?? '';
 }
 
 const INITIAL_STATE: WizardState = {
