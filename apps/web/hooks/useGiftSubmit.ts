@@ -7,10 +7,17 @@ interface UseGiftSubmitOptions {
   onSuccess: () => void;
 }
 
+interface SubmitResult {
+  giftId: string;
+  recipientCount: number;
+  emailsSent: number;
+}
+
 export function useGiftSubmit({ onSuccess }: UseGiftSubmitOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [result, setResult] = useState<SubmitResult | null>(null);
 
   const submit = useCallback(
     async (state: WizardState) => {
@@ -34,6 +41,12 @@ export function useGiftSubmit({ onSuccess }: UseGiftSubmitOptions) {
         });
 
         if (res.status === 201) {
+          const data = await res.json().catch(() => ({})) as Partial<SubmitResult>;
+          setResult({
+            giftId: data.giftId ?? '',
+            recipientCount: data.recipientCount ?? 0,
+            emailsSent: data.emailsSent ?? 0,
+          });
           setIsSuccess(true);
           onSuccess();
         } else {
@@ -49,5 +62,5 @@ export function useGiftSubmit({ onSuccess }: UseGiftSubmitOptions) {
     [onSuccess],
   );
 
-  return { submit, isLoading, error, isSuccess };
+  return { submit, isLoading, error, isSuccess, result };
 }

@@ -60,6 +60,19 @@ export async function getGiftWithRecipient(giftId: string, revealToken: string) 
   return { gift, recipient, game, template };
 }
 
+export async function getGiftWithRecipients(giftId: string) {
+  const gift = await db.query.gifts.findFirst({
+    where: eq(gifts.id, giftId),
+  });
+  if (!gift) return null;
+
+  const recipients = await db.query.giftRecipients.findMany({
+    where: eq(giftRecipients.giftId, giftId),
+  });
+
+  return { gift, recipients };
+}
+
 export async function markRevealed(recipientId: number) {
   await db
     .update(giftRecipients)

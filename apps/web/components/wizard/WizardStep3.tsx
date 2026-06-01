@@ -10,14 +10,16 @@ interface WizardStep3Props {
   senderEmail: string;
   maxRecipients?: number;
   paymentsEnabled?: boolean;
-  isSubmitting?: boolean;
+  isEmailLoading?: boolean;
+  sharingEmail?: string | null;
   submitError?: string | null;
   onUpdateRecipient: (id: string, changes: Partial<Omit<Recipient, 'id'>>) => void;
   onAddRecipient: () => void;
   onRemoveRecipient: (id: string) => void;
   onChangeSenderName: (value: string) => void;
   onChangeSenderEmail: (value: string) => void;
-  onSubmit: () => void;
+  onSendByEmail: () => void;
+  onShareRecipient: (recipient: Recipient) => void;
 }
 
 type RecipientErrors = Record<string, { name?: string; email?: string }>;
@@ -33,14 +35,16 @@ export function WizardStep3({
   senderEmail,
   maxRecipients = 5,
   paymentsEnabled = false,
-  isSubmitting = false,
+  isEmailLoading = false,
+  sharingEmail = null,
   submitError = null,
   onUpdateRecipient,
   onAddRecipient,
   onRemoveRecipient,
   onChangeSenderName,
   onChangeSenderEmail,
-  onSubmit,
+  onSendByEmail,
+  onShareRecipient,
 }: WizardStep3Props) {
   const [recipientErrors, setRecipientErrors] = useState<RecipientErrors>({});
   const [senderErrors, setSenderErrors] = useState<SenderErrors>({});
@@ -48,7 +52,6 @@ export function WizardStep3({
   function validate(): boolean {
     const newRecipErrors: RecipientErrors = {};
     const newSenderErrors: SenderErrors = {};
-
     const emailSet = new Set<string>();
 
     recipients.forEach((r) => {
@@ -77,15 +80,56 @@ export function WizardStep3({
     return Object.keys(newRecipErrors).length === 0 && Object.keys(newSenderErrors).length === 0;
   }
 
-  function handleSubmit() {
-    if (validate()) onSubmit();
+  function handleSendByEmail() {
+    if (validate()) onSendByEmail();
+  }
+
+  function handleShareRecipient(recipient: Recipient) {
+    if (validate()) onShareRecipient(recipient);
   }
 
   const atMax = recipients.length >= maxRecipients;
+  const isAnySharingOrLoading = isEmailLoading || !!sharingEmail;
 
   return (
     <div className="space-y-8">
-      {/* Recipients */}
+
+      {/* ── FROM (sender) ── */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold" style={{ color: '#f5f5f0' }}>
+          ✉️ From
+        </h2>
+        <div
+          className="rounded-2xl p-5 space-y-4"
+          style={{ background: '#13132a', border: '1px solid rgba(201,162,39,0.25)' }}
+        >
+          <Input
+            label="Your Name"
+            value={senderName}
+            onChange={(e) => {
+              onChangeSenderName(e.target.value);
+              if (senderErrors.senderName) setSenderErrors((prev) => ({ ...prev, senderName: undefined }));
+            }}
+            error={senderErrors.senderName}
+            placeholder="Your name"
+            required
+          />
+          <Input
+            label="Your Email"
+            type="email"
+            value={senderEmail}
+            onChange={(e) => {
+              onChangeSenderEmail(e.target.value);
+              if (senderErrors.senderEmail) setSenderErrors((prev) => ({ ...prev, senderEmail: undefined }));
+            }}
+            error={senderErrors.senderEmail}
+            placeholder="your@email.com"
+            required
+          />
+        </div>
+      </div>
+
+      {/* ── TO (recipients) ── */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold" style={{ color: '#f5f5f0' }}>
           🎁 Who Gets Lucky?
@@ -142,6 +186,19 @@ export function WizardStep3({
               onChange={(e) => onUpdateRecipient(r.id, { phone: e.target.value })}
               placeholder="+1 (555) 000-0000"
             />
+
+            {/* Per-recipient share button */}
+            <div className="pt-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                loading={sharingEmail === r.email}
+                disabled={isAnySharingOrLoading}
+                onClick={() => handleShareRecipient(r)}
+              >
+                {sharingEmail === r.email ? 'Saving…' : '🔗 Share Lucky Gift'}
+              </Button>
+            </div>
           </div>
         ))}
 
@@ -163,51 +220,20 @@ export function WizardStep3({
         </div>
       </div>
 
-      {/* Sender */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold" style={{ color: '#f5f5f0' }}>
-          ✉️ From
-        </h2>
-
-        <div
-          className="rounded-2xl p-5 space-y-4"
-          style={{ background: '#13132a', border: '1px solid rgba(201,162,39,0.25)' }}
-        >
-          <Input
-            label="Your Name"
-            value={senderName}
-            onChange={(e) => {
-              onChangeSenderName(e.target.value);
-              if (senderErrors.senderName) setSenderErrors((prev) => ({ ...prev, senderName: undefined }));
-            }}
-            error={senderErrors.senderName}
-            placeholder="Your name"
-            required
-          />
-          <Input
-            label="Your Email"
-            type="email"
-            value={senderEmail}
-            onChange={(e) => {
-              onChangeSenderEmail(e.target.value);
-              if (senderErrors.senderEmail) setSenderErrors((prev) => ({ ...prev, senderEmail: undefined }));
-            }}
-            error={senderErrors.senderEmail}
-            placeholder="your@email.com"
-            required
-          />
-        </div>
-      </div>
-
-      {/* Submit */}
+      {/* ── Submit section ── */}
       <div className="space-y-3">
+        <p className="text-center text-sm font-medium" style={{ color: '#a0a0b0' }}>
+          Share or send lucky numbers — Free! 🍀
+        </p>
+
         <Button
           size="lg"
-          loading={isSubmitting}
-          onClick={handleSubmit}
+          loading={isEmailLoading}
+          disabled={isAnySharingOrLoading}
+          onClick={handleSendByEmail}
           className="w-full"
         >
-          {paymentsEnabled ? '💳 Pay $10 & Send' : '🍀 Send Lucky Numbers — Free!'}
+          {paymentsEnabled ? '💳 Pay $10 & Send' : '📧 Send Lucky by Email'}
         </Button>
 
         {submitError && (
