@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { RevealCard } from '@/components/reveal/RevealCard';
 
@@ -37,6 +37,7 @@ const MOCK_DATA = {
     bonusCount: 1,
     bonusMin: 1,
     bonusMax: 26,
+    bonusName: 'Powerball',
   },
   template: {
     name: 'Birthday',

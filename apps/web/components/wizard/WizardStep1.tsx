@@ -10,7 +10,13 @@ interface WizardStep1Props {
   onSelectOccasion: (occasionKey: string) => void;
 }
 
-const GAME_ICONS: Record<string, string> = {
+const GAME_LOGOS: Record<string, string> = {
+  PWR: '/logos/powerball.webp',
+  MML: '/logos/mega-millions.jpg',
+  MFL: '/logos/millionaire-for-life.webp',
+};
+
+const GAME_FALLBACK_ICONS: Record<string, string> = {
   PWR: '🔴',
   MML: '🟡',
   MFL: '💎',
@@ -30,7 +36,7 @@ export function WizardStep1({ gameId, occasionKey, onSelectGame, onSelectOccasio
           🎰 Choose Your Lottery Game
         </h2>
         <p className="text-sm mb-4" style={{ color: '#a0a0b0' }}>
-          Select which lottery game to gift
+          Select which lottery game numbers to gift
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {LOTTERY_GAMES.map((game) => {
@@ -40,14 +46,15 @@ export function WizardStep1({ gameId, occasionKey, onSelectGame, onSelectOccasio
                 key={game.gameId}
                 type="button"
                 onClick={() => onSelectGame(game.gameId)}
-                className="relative rounded-xl p-5 text-left transition-all duration-200 cursor-pointer"
+                title={GAME_DESCRIPTIONS[game.gameId]}
+                className="relative rounded-xl p-4 flex flex-col items-center text-center transition-all duration-200 cursor-pointer"
                 style={{
-                  backgroundColor: '#12121a',
+                  backgroundColor: isSelected ? '#1a1a2e' : '#12121a',
                   border: isSelected ? '2px solid #c9a227' : '1px solid #2a2a3e',
                   boxShadow: isSelected
-                    ? '0 0 0 2px rgba(201,162,39,0.3), 0 4px 24px rgba(201,162,39,0.2)'
-                    : undefined,
-                  minHeight: '120px',
+                    ? '0 0 0 2px rgba(201,162,39,0.3), 0 4px 24px rgba(201,162,39,0.15)'
+                    : '0 2px 8px rgba(0,0,0,0.3)',
+                  minHeight: '140px',
                 }}
                 aria-pressed={isSelected}
               >
@@ -59,13 +66,37 @@ export function WizardStep1({ gameId, occasionKey, onSelectGame, onSelectOccasio
                     ✓
                   </div>
                 )}
-                <div className="text-3xl mb-2">{GAME_ICONS[game.gameId]}</div>
-                <div className="font-bold" style={{ color: '#f0c040' }}>
-                  {game.name}
+
+                {/* Logo */}
+                <div className="flex items-center justify-center w-full mb-3" style={{ height: '72px' }}>
+                  <img
+                    src={GAME_LOGOS[game.gameId]}
+                    alt={game.name}
+                    style={{
+                      maxHeight: '72px',
+                      maxWidth: '100%',
+                      objectFit: 'contain',
+                      filter: isSelected ? 'none' : 'brightness(0.85)',
+                      transition: 'filter 0.2s',
+                    }}
+                    onError={(e) => {
+                      // Fallback to emoji if image not found
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      const fallback = target.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = 'block';
+                    }}
+                  />
+                  {/* Hidden fallback emoji shown if image fails to load */}
+                  <span
+                    className="text-4xl"
+                    style={{ display: 'none' }}
+                    aria-hidden="true"
+                  >
+                    {GAME_FALLBACK_ICONS[game.gameId]}
+                  </span>
                 </div>
-                <div className="text-xs mt-1" style={{ color: '#6b6b80' }}>
-                  {GAME_DESCRIPTIONS[game.gameId]}
-                </div>
+
               </button>
             );
           })}

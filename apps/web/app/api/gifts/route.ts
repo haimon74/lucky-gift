@@ -7,7 +7,6 @@ import { sendGiftEmail } from '@/lib/email';
 const BASE_URL = process.env['NEXT_PUBLIC_BASE_URL'] ?? 'https://luck-gift.haimazar.us';
 
 export async function POST(request: Request) {
-  // Parse request body
   let body: unknown;
   try {
     body = await request.json();
@@ -15,7 +14,9 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Validate payload
+  // sendEmail flag: default true (backward compat). Pass false to save gift without emailing.
+  const sendEmail = (body as Record<string, unknown>)?.sendEmail !== false;
+
   const parsed = giftPayloadSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
@@ -24,7 +25,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Gate behind payments if enabled
   if (isPaymentsEnabled()) {
     return Response.json(
       { error: 'Payment required', code: 'PAYMENT_REQUIRED' },
@@ -37,7 +37,6 @@ export async function POST(request: Request) {
   const giftId = crypto.randomUUID();
   const createdAt = Date.now();
 
-  // Insert gift record
   try {
     await createGift({ id: giftId, gameId, occasionKey, message, senderName, senderEmail, createdAt });
   } catch (err) {
@@ -45,15 +44,15 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Failed to create gift' }, { status: 500 });
   }
 
-  // Process each recipient
   let emailsSent = 0;
+  const savedRecipients: { name: string; email: string; revealUrl: string }[] = [];
+
   for (const recipient of recipients) {
     const revealToken = crypto.randomUUID();
     let seedHash: string;
     try {
       seedHash = await generateSeedHash(giftId, recipient.email, createdAt);
-    } catch (err) {
-      console.error('Seed hash error:', err);
+    } catch {
       seedHash = `${giftId}:${recipient.email}:${createdAt}`;
     }
 
@@ -68,23 +67,26 @@ export async function POST(request: Request) {
       });
     } catch (err) {
       console.error('DB error creating recipient:', err);
-      // Continue to next recipient — gift is already saved
     }
 
     const revealUrl = `${BASE_URL}/reveal/${giftId}?t=${revealToken}`;
-    const sent = await sendGiftEmail({
-      recipientName: recipient.name,
-      recipientEmail: recipient.email,
-      senderName,
-      senderEmail,
-      message,
-      revealUrl,
-    });
-    if (sent) emailsSent++;
+    savedRecipients.push({ name: recipient.name, email: recipient.email, revealUrl });
+
+    if (sendEmail) {
+      const sent = await sendGiftEmail({
+        recipientName: recipient.name,
+        recipientEmail: recipient.email,
+        senderName,
+        senderEmail,
+        message,
+        revealUrl,
+      });
+      if (sent) emailsSent++;
+    }
   }
 
   return Response.json(
-    { giftId, recipientCount: recipients.length, emailsSent },
+    { giftId, recipientCount: recipients.length, emailsSent, recipients: savedRecipients },
     { status: 201 },
   );
 }

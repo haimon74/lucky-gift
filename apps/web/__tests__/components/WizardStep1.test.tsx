@@ -15,7 +15,8 @@ describe('WizardStep1', () => {
   it('renders all 3 game cards', () => {
     render(<WizardStep1 {...defaultProps} />);
     for (const game of LOTTERY_GAMES) {
-      expect(screen.getByText(game.name)).toBeDefined();
+      // Game name is in the img alt text (no visible text on card)
+      expect(screen.getByAltText(game.name)).toBeDefined();
     }
   });
 
@@ -29,7 +30,8 @@ describe('WizardStep1', () => {
   it('calls onSelectGame when a game card is clicked', async () => {
     const onSelectGame = vi.fn();
     render(<WizardStep1 {...defaultProps} onSelectGame={onSelectGame} />);
-    await userEvent.click(screen.getByText('Powerball'));
+    // Click the button containing the Powerball logo image
+    await userEvent.click(screen.getByAltText('Powerball').closest('button')!);
     expect(onSelectGame).toHaveBeenCalledWith('PWR');
   });
 
@@ -42,8 +44,7 @@ describe('WizardStep1', () => {
 
   it('shows selected state on game card', () => {
     render(<WizardStep1 {...defaultProps} gameId="PWR" />);
-    const btns = screen.getAllByRole('button');
-    const pwrBtn = btns.find((b) => b.textContent?.includes('Powerball'));
+    const pwrBtn = screen.getByAltText('Powerball').closest('button');
     expect(pwrBtn?.getAttribute('aria-pressed')).toBe('true');
   });
 
